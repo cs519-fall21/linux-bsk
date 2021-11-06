@@ -1167,7 +1167,10 @@ struct task_struct {
 	/* Used by LSM modules for access restriction: */
 	void				*security;
 #endif
-
+	int fallOS_extent;
+	struct rb_root fallOS_extent_rb;
+	int fallOS_extent_count;
+	//struct fallOS_extent *fallOS_task_extent;
 	/*
 	 * New fields for task_struct should be added above here, so that
 	 * they are included in the randomized portion of task_struct.

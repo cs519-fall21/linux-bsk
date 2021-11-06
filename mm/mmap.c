@@ -45,7 +45,7 @@
 #include <linux/moduleparam.h>
 #include <linux/pkeys.h>
 #include <linux/oom.h>
-
+#include <linux/sched.h>
 #include <linux/uaccess.h>
 #include <asm/cacheflush.h>
 #include <asm/tlb.h>
@@ -67,7 +67,6 @@ const int mmap_rnd_compat_bits_min = CONFIG_ARCH_MMAP_RND_COMPAT_BITS_MIN;
 const int mmap_rnd_compat_bits_max = CONFIG_ARCH_MMAP_RND_COMPAT_BITS_MAX;
 int mmap_rnd_compat_bits __read_mostly = CONFIG_ARCH_MMAP_RND_COMPAT_BITS;
 #endif
-
 static bool ignore_rlimit_data;
 core_param(ignore_rlimit_data, ignore_rlimit_data, bool, 0644);
 
@@ -3722,4 +3721,13 @@ static int __meminit init_reserve_notifier(void)
 
 	return 0;
 }
+asmlinkage long sys_fallos(void) {
+	struct task_struct *tsk;
+	tsk = get_current();
+	tsk->fallOS_extent = tsk->pid;
+	tsk->fallOS_extent_rb = RB_ROOT;
+	tsk->fallOS_extent_count = 0;
+	return 0;
+}
+
 subsys_initcall(init_reserve_notifier);

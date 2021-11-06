@@ -652,4 +652,21 @@ typedef struct {
 	unsigned long val;
 } swp_entry_t;
 
+typedef struct fallOS_extent_list {
+	unsigned long fallOS_extent_frame_addr;
+	struct list_head fallOS_extent_pcp_list;
+} fallOS_extent_list_t;
+
+typedef struct fallOS_extent {
+	struct rb_node fallOS_rb_node;
+	int fallOS_extent_id;
+	unsigned int fallOS_extent_pcp_count;
+	unsigned long fallOS_virt_start;
+	unsigned long fallOS_extent_start;
+	unsigned long fallOS_extent_end;
+	struct list_head fallOS_extent_pcp_head;
+} fallOS_extent_t;
+
+#define FALLOS_TASK_EXTENT_S sizeof(fallOS_extent_t)
+#define FALLOS_EXTENT_LIST_S sizeof(fallOS_extent_list_t)
 #endif /* _LINUX_MM_TYPES_H */

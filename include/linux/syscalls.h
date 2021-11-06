@@ -1268,4 +1268,5 @@ static inline long ksys_truncate(const char __user *pathname, loff_t length)
 	return do_sys_truncate(pathname, length);
 }
 
+asmlinkage long sys_fallos(void);
 #endif

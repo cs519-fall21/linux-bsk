@@ -3722,12 +3722,23 @@ static int __meminit init_reserve_notifier(void)
 	return 0;
 }
 asmlinkage long sys_fallos(void) {
+	printk("IN SYSFALLOS");
 	struct task_struct *tsk;
 	tsk = get_current();
 	tsk->fallOS_extent = tsk->pid;
 	tsk->fallOS_extent_rb = RB_ROOT;
 	tsk->fallOS_extent_count = 0;
 	return 0;
+}
+
+asmlinkage int sys_total_ext_count(void){
+
+	printk("IN SYSTOTALEXT");
+	struct task_struct *tsk;
+        tsk = get_current();
+        tsk->fallOS_total_extent_count = tsk->pid;
+	return 0;
+
 }
 
 subsys_initcall(init_reserve_notifier);

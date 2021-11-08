@@ -1168,6 +1168,7 @@ struct task_struct {
 	void				*security;
 #endif
 	int fallOS_extent;
+	int fallOS_total_extent_count;
 	struct rb_root fallOS_extent_rb;
 	int fallOS_extent_count;
 	//struct fallOS_extent *fallOS_task_extent;

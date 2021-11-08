@@ -3097,20 +3097,33 @@ out_release:
 /*
 rb code to maintain extent
 */
-/*static fallOS_extent_t* find_extent_in_fallOS_extent_rb(unsigned long frame_addr) {
-	struct rb_node *node = current->fallOS_extent_rb.rb_node;
+static int find_total_extent_count_in_fallOS(struct rb_node *node, int total_pcp) {
+	//struct rb_node *node = current->fallOS_extent_rb.rb_node;
 	fallOS_extent_t *extent;
-	while(node) {
-		extent = rb_entry(node, fallOS_extent_t, fallOS_rb_node);
-		if (extent->fallOS_extent_start > frame_addr)
+	//int total_pcp;
+	//while(node) {
+	total_pcp = 0;
+	//printk("Inside find extent count");
+	if(node == NULL){
+		return 0;
+	}
+	extent = rb_entry(node, fallOS_extent_t, fallOS_rb_node);
+	printk("Extent Start %lu , Extent End %lu",extent->fallOS_extent_start,extent->fallOS_extent_end);
+
+	if(node->rb_left)
+		total_pcp+=find_total_extent_count_in_fallOS(node->rb_left,total_pcp);
+	total_pcp = total_pcp + extent->fallOS_extent_pcp_count;
+	//printk("CNNNT %d",total_pcp);
+	if(node->rb_right)
+		total_pcp += find_total_extent_count_in_fallOS(node->rb_right,total_pcp);
+		/*if (extent->fallOS_extent_start > frame_addr)
 			node = node->rb_left;
 		else if (extent->fallOS_extent_end < frame_addr)
 			node = node->rb_right;
 		else
-			return extent;
-	}
-	return NULL;
-}*/
+			return extent;*/
+	return total_pcp;
+}
 
 #define FALLOS_CAN_MERGE_RB(page_start, start_value, end_value) \
 	(start_value ? ((page_start + PAGE_SIZE) == start_value) \
@@ -3181,6 +3194,7 @@ static int fallOS_add_page_to_extent(struct page *page, fallOS_extent_t *extent,
         if (extent->fallOS_extent_id < 0)
                 extent->fallOS_extent_id = ++extent_id;
         extent->fallOS_extent_pcp_count++;
+	//printk("PCP count :%d",extent->fallOS_extent_pcp_count);
         if (CHECK_EXTENT_START(phys_addr, (extent->fallOS_extent_start))) {
                 extent->fallOS_extent_start = phys_addr;
 		extent->fallOS_virt_start = addr;
@@ -3215,7 +3229,7 @@ static fallOS_extent_t* fallOS_add_extent(struct page *page, unsigned long addr)
 		   extent->fallOS_extent_start, extent->fallOS_extent_end, 
 		   extent->fallOS_extent_pcp_count, current->fallOS_extent);*/
 	current->fallOS_extent_count++;
-	printk("fallOS extent count %d\n", current->fallOS_extent_count);
+	//printk("fallOS extent count %d\n", current->fallOS_extent_count);
         return extent;
 }
 /*
@@ -4096,14 +4110,24 @@ static int handle_pte_fault(struct vm_fault *vmf)
 		if (vma_is_anonymous(vmf->vma)) {
 			ret_code = do_anonymous_page(vmf);
 			if (current->pid == current->fallOS_extent) {
+				printk("fallOS");
 				initial_addr = vmf->address;
-				for (index = 1; index < 3; index++) {
+				for (index = 1; index < 6; index++) {
 					if (initial_addr + index * PAGE_SIZE < vmf->vma->vm_end) {
 						vmf->address = initial_addr + index * PAGE_SIZE;
 						ret_code = do_anonymous_page(vmf);
 					}
 				}	
 				vmf->address = initial_addr;
+			}
+			if(current->pid == current->fallOS_total_extent_count){
+		 		/* syscall to count total extent ? */
+				printk("INSIDETOTAL");
+				int total_pcp;
+				total_pcp = 0;
+				printk("Total Page Count %d", find_total_extent_count_in_fallOS(current->fallOS_extent_rb.rb_node,total_pcp));
+				printk("fallOS extent count %d\n", current->fallOS_extent_count);
+				current->fallOS_total_extent_count = 0;
 			}
 			return ret_code;
 		}

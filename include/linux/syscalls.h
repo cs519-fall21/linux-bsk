@@ -1269,4 +1269,5 @@ static inline long ksys_truncate(const char __user *pathname, loff_t length)
 }
 
 asmlinkage long sys_fallos(void);
+asmlinkage int sys_total_ext_count(void);
 #endif

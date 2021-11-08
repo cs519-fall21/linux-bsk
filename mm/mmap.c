@@ -3731,12 +3731,10 @@ asmlinkage long sys_fallos(void) {
 	return 0;
 }
 
-asmlinkage int sys_total_ext_count(void){
-
-	printk("IN SYSTOTALEXT");
+asmlinkage long sys_traverse(void) {
 	struct task_struct *tsk;
         tsk = get_current();
-        tsk->fallOS_total_extent_count = tsk->pid;
+	tsk->traverse = tsk->pid;
 	return 0;
 
 }

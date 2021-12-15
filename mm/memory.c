@@ -3100,16 +3100,34 @@ rb code to maintain extent
 
 static void find_pcp_count(struct rb_node *node, unsigned int *count) {
 	fallOS_extent_t *extent;
+
 	if (node == NULL)
 		return;
 	extent = rb_entry(node, fallOS_extent_t, fallOS_rb_node);
 	if (extent == NULL)
 		return;
 	*count += extent->fallOS_extent_pcp_count;
+	if(extent->isCompressed == 1){
+		current->fallOS_extent_compressed_cnt++;
+	}
 	find_pcp_count(node->rb_left, count);
 	find_pcp_count(node->rb_right, count);
 	return;
 }
+
+static void get_dll_extents(void) {
+	struct fallOS_extent *start ;
+	int count = 0;
+	list_for_each_entry ( start , &(current->fallOS_extent_dll_list) , fallOS_extent_dll_head ) 
+    	{ 
+        	printk ("data  =  %d\n" , start->fallOS_extent_id); 
+		count+=1;
+    	}
+	printk("DLL Extent Count %d\n",count);
+	return;
+}
+
+
 
 #define FALLOS_CAN_MERGE_RB(page_start, start_value, end_value) \
 	(start_value ? ((page_start + PAGE_SIZE) == start_value) \
@@ -3149,6 +3167,7 @@ static int fallOS_addto_extent_rb(struct rb_node **node, struct page *page, stru
 		} else
 			printk("fallOS frame already present\n");
 	} else {
+
 		if((rb_extent = fallOS_add_extent(page, virtual_addr)) == NULL)
 			return 0;
 		rb_link_node((struct rb_node *)rb_extent, parent, node);
@@ -3185,6 +3204,9 @@ static int fallOS_add_page_to_extent(struct page *page, fallOS_extent_t *extent,
         if (CHECK_EXTENT_END(phys_addr, (extent->fallOS_extent_end))) 
                 extent->fallOS_extent_end = phys_addr + PAGE_SIZE - 1;
         list_add(&(page_extent->fallOS_extent_pcp_list), &(extent->fallOS_extent_pcp_head));
+	if (!list_empty(&extent->fallOS_extent_dll_head)){
+		list_move(&(extent->fallOS_extent_dll_head),&(current->fallOS_extent_dll_list));
+	}
 	return 1; 
 }
 
@@ -3197,6 +3219,8 @@ void fallOS_initialize_extent(fallOS_extent_t *extent) {
 	extent->fallOS_rb_node.rb_left = NULL;
 	extent->fallOS_rb_node.rb_right = NULL;
 	INIT_LIST_HEAD(&(extent->fallOS_extent_pcp_head));
+	INIT_LIST_HEAD(&(extent->fallOS_extent_dll_head));
+	extent->isCompressed = 0;
 }
 
 static fallOS_extent_t* fallOS_add_extent(struct page *page, unsigned long addr) {
@@ -3208,6 +3232,7 @@ static fallOS_extent_t* fallOS_add_extent(struct page *page, unsigned long addr)
         if (!fallOS_add_page_to_extent(page, extent, addr))
 		return NULL;
 	current->fallOS_extent_count++;
+	list_add_tail(&(extent->fallOS_extent_dll_head), &(current->fallOS_extent_dll_list)); //s
 	printk("fallOS extent count %d\n", current->fallOS_extent_count);
         return extent;
 }
@@ -4093,6 +4118,10 @@ static int handle_pte_fault(struct vm_fault *vmf)
 			}
 			if (current->pid == current->traverse) {
 				find_pcp_count(current->fallOS_extent_rb.rb_node, &count);
+				get_dll_extents();
+				printk("DLL Rear extent_id %d", current->fallOS_extent_dll_rear->fallOS_extent_id);
+				printk("Extents Compressed %d\n",current->fallOS_extent_compressed_cnt);
+				printk("Compressed Ratio is %d Percent \n", (current->fallOS_extent_compressed_cnt/count)*100);
 				printk("fallOS page count %u\n", count);
 				current->traverse = 0;
 			}

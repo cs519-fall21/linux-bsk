@@ -657,6 +657,7 @@ typedef struct fallOS_extent_list {
 	struct list_head fallOS_extent_pcp_list;
 } fallOS_extent_list_t;
 
+
 typedef struct fallOS_extent {
 	struct rb_node fallOS_rb_node;
 	int fallOS_extent_id;
@@ -665,6 +666,8 @@ typedef struct fallOS_extent {
 	unsigned long fallOS_extent_start;
 	unsigned long fallOS_extent_end;
 	struct list_head fallOS_extent_pcp_head;
+	struct list_head fallOS_extent_dll_head;
+	int isCompressed;
 } fallOS_extent_t;
 
 #define FALLOS_TASK_EXTENT_S sizeof(fallOS_extent_t)

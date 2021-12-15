@@ -3728,6 +3728,8 @@ asmlinkage long sys_fallos(void) {
 	tsk->fallOS_extent = tsk->pid;
 	tsk->fallOS_extent_rb = RB_ROOT;
 	tsk->fallOS_extent_count = 0;
+	tsk->fallOS_extent_compressed_cnt = 0;
+	INIT_LIST_HEAD(&(tsk->fallOS_extent_dll_list));
 	return 0;
 }
 
@@ -3735,6 +3737,7 @@ asmlinkage long sys_traverse(void) {
 	struct task_struct *tsk;
         tsk = get_current();
 	tsk->traverse = tsk->pid;
+	tsk->fallOS_extent_dll_rear = list_last_entry(&(current->fallOS_extent_dll_list),struct fallOS_extent,fallOS_extent_dll_head);
 	return 0;
 
 }

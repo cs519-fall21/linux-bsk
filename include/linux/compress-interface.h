@@ -19,5 +19,9 @@ struct crypto_comp *ci_tfm;
 //int zcomp_decompress(struct ci_strm *zstrm,
 //		     char *src, unsigned int src_len, void *dst);
 
+int ci_compress(char *src, unsigned int src_len, char *dst,
+		unsigned int *dst_len);
+int ci_decompress(char *src, unsigned int src_len, char *dst,
+		  unsigned int *dst_len);
 
 #endif //LINUX_COMPRESS_INTERFACE_H

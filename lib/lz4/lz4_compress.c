@@ -206,6 +206,7 @@ static FORCE_INLINE int LZ4_compress_generic(
 	/* Init conditions */
 	if ((U32)inputSize > (U32)LZ4_MAX_INPUT_SIZE) {
 		/* Unsupported inputSize, too large (or negative) */
+		printk("lz4 209");
 		return 0;
 	}
 
@@ -227,6 +228,7 @@ static FORCE_INLINE int LZ4_compress_generic(
 
 	if ((tableType == byU16)
 		&& (inputSize >= LZ4_64Klimit)) {
+		printk("lz4 231");
 		/* Size too large (not within 64K limit) */
 		return 0;
 	}
@@ -303,13 +305,22 @@ static FORCE_INLINE int LZ4_compress_generic(
 
 			token = op++;
 
+			int out_print = litLength +
+					(2 + 1 + LASTLITERALS) +
+					(litLength / 255);
 			if ((outputLimited) &&
 				/* Check output buffer overflow */
 				(unlikely(op + litLength +
 					(2 + 1 + LASTLITERALS) +
-					(litLength / 255) > olimit)))
+					(litLength / 255) > olimit))) {
+				printk("lz4 313  litLength %d out_print %d",
+				       litLength, out_print);
+				printk("lz4 inputSize %d and maxOutputSize %d",
+				       inputSize, maxOutputSize);
+				printk("lz4 source %p and dest %p", source,
+				       dest);
 				return 0;
-
+			}
 			if (litLength >= RUN_MASK) {
 				int len = (int)litLength - RUN_MASK;
 
@@ -368,9 +379,10 @@ _next_match:
 				/* Check output buffer overflow */
 				(unlikely(op +
 					(1 + LASTLITERALS) +
-					(matchCode >> 8) > olimit)))
+					(matchCode >> 8) > olimit))) {
+				printk("lz4 375");
 				return 0;
-
+			}
 			if (matchCode >= ML_MASK) {
 				*token += ML_MASK;
 				matchCode -= ML_MASK;
@@ -433,9 +445,10 @@ _last_literals:
 		if ((outputLimited) &&
 			/* Check output buffer overflow */
 			((op - (BYTE *)dest) + lastRun + 1 +
-			((lastRun + 255 - RUN_MASK) / 255) > (U32)maxOutputSize))
+			((lastRun + 255 - RUN_MASK) / 255) > (U32)maxOutputSize)) {
+			printk("lz4 441");
 			return 0;
-
+		}
 		if (lastRun >= RUN_MASK) {
 			size_t accumulator = lastRun - RUN_MASK;
 			*op++ = RUN_MASK << ML_BITS;
@@ -452,6 +465,7 @@ _last_literals:
 	}
 
 	/* End */
+	printk("lz4 460 end");
 	return (int) (((char *)op) - dest);
 }
 

@@ -1171,7 +1171,6 @@ struct task_struct {
 	struct rb_root fallOS_extent_rb;
 	int fallOS_extent_count;
 	int traverse;
-	//struct fallOS_extent *fallOS_task_extent;
 	/*
 	 * New fields for task_struct should be added above here, so that
 	 * they are included in the randomized portion of task_struct.

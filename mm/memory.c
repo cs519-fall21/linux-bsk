@@ -137,7 +137,6 @@ static int __init init_zero_pfn(void)
 }
 core_initcall(init_zero_pfn);
 
-
 #if defined(SPLIT_RSS_COUNTING)
 
 void sync_mm_rss(struct mm_struct *mm)
@@ -152,7 +151,7 @@ void sync_mm_rss(struct mm_struct *mm)
 	}
 	current->rss_stat.events = 0;
 }
-
+static int fallOS_unmap_done; 
 static void add_mm_counter_fast(struct mm_struct *mm, int member, int val)
 {
 	struct task_struct *task = current;
@@ -3097,6 +3096,8 @@ out_release:
 /*
 rb code to maintain extent
 */
+void fallOS_decompress_and_copy_to_page(struct page *page, fallOS_extent_t *extent) 
+}
 
 static void find_pcp_count(struct rb_node *node, unsigned int *count) {
 	fallOS_extent_t *extent;
@@ -3117,9 +3118,26 @@ static void find_pcp_count(struct rb_node *node, unsigned int *count) {
 
 static int fallOS_add_page_to_extent(struct page *page, fallOS_extent_t *extent, unsigned long addr);
 static fallOS_extent_t* fallOS_add_extent(struct page *page, unsigned long addr);
-
+/*
+void delete_node_and_copy_to_parent() {
+}
+*/
+void fallOS_get_extent_and_compress(void) {
+	unsigned long start; 
+	fallOS_extent_t *extent;	
+	printk("FALLOS GOING TO UNMAP \n");	
+	fallOS_unmap_done = 1;	
+	extent = rb_entry(current->fallOS_extent_rb.rb_node, fallOS_extent_t, fallOS_rb_node);   
+	start = extent->fallOS_virt_start;	
+	//vma = find_vma_intersection(current->mm, start, end); 
+	printk("\n fallOS do_munmap returned %d", do_munmap(current->mm, start, PAGE_SIZE, NULL));
+}
 void merge_rb_nodes(struct page *page, fallOS_extent_t *extent, unsigned long addr) {
 	fallOS_add_page_to_extent(page, extent, addr);
+	/*if (node->rb_left && node->rb_left->fallOS_virt_start + virt_end_offset == extent->fallOS_virt_start) { 
+	}
+	if (node->rb_right && node->rb_right->fallOS_virt_start == extent->fallOS_virt_start + virt_end_offset) {
+	}*/	
 	/*add code to merge old children present in the tree*/
 }
 static int fallOS_addto_extent_rb(struct rb_node **node, struct page *page, struct rb_node *parent, unsigned long virtual_addr) {
@@ -3156,7 +3174,6 @@ static int fallOS_addto_extent_rb(struct rb_node **node, struct page *page, stru
 	}
 	return 1;
 }
-
 /*
 extent code for pages
 */
@@ -3216,8 +3233,6 @@ static fallOS_extent_t* fallOS_add_extent(struct page *page, unsigned long addr)
  * but allow concurrent faults), and pte mapped but not yet locked.
  * We return with mmap_sem still held, but pte unmapped and unlocked.
  */
-/*int fallOS_adjust_extent(struct page *page);
-int fallOS_add_to_extent(fallOS_extent_list_t *page_extent, fallOS_extent_t *extent);*/
 static int do_anonymous_page(struct vm_fault *vmf)
 {
 	struct vm_area_struct *vma = vmf->vma;
@@ -4080,10 +4095,16 @@ static int handle_pte_fault(struct vm_fault *vmf)
 	}
 	if (!vmf->pte) {
 		if (vma_is_anonymous(vmf->vma)) {
+			ret_code = do_anonymous_page(vmf);	
+			if (current->pid == current->fallOS_extent) {	
+				printk("\nFAULTING FALLOS");
+				if (!(is_compressed = fallOS_is_compressed(vmf->address, &pg_count))) 
+					pg_count = 16;	
+			}	
 			ret_code = do_anonymous_page(vmf);
-			if (current->pid == current->fallOS_extent) {
+			if (!fallOS_unmap_done && current->pid == current->fallOS_extent) {
 				initial_addr = vmf->address;
-				for (index = 1; index < 16; index++) {
+				for (index = 1; index < pg_count; index++) { 
 					if (initial_addr + index * PAGE_SIZE < vmf->vma->vm_end) {
 						vmf->address = initial_addr + index * PAGE_SIZE;
 						ret_code = do_anonymous_page(vmf);
@@ -4091,6 +4112,9 @@ static int handle_pte_fault(struct vm_fault *vmf)
 				}	
 				vmf->address = initial_addr;
 			}
+			if (is_compressed) {
+				fallOS_decompress_and_copy_to_page(page)	
+			}	
 			if (current->pid == current->traverse) {
 				find_pcp_count(current->fallOS_extent_rb.rb_node, &count);
 				printk("fallOS page count %u\n", count);

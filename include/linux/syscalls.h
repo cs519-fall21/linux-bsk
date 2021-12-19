@@ -1269,3 +1269,4 @@ static inline long ksys_truncate(const char __user *pathname, loff_t length)
 }
 
 #endif
+asmlinkage long compress_for_extent(void);

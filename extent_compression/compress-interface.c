@@ -162,7 +162,7 @@ asmlinkage long compress_for_extent(void)
 	////struct ci_strm *zstrm,  void *src,  int src_len,
 	//		 void *dst,  int *dst_len
 	//	int ret = ci_compress(ciStrm, (void*)src, src_len, (void*)dst, &dst_len);
-	int ret = ci_compress(char *)src, src_len, (char *)dst,
+	int ret = ci_compress((char *)src, src_len, (char *)dst,
 			      &dst_len);
 	printk("compression done");
 	//	printk((const char *)ret);

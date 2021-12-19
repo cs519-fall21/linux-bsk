@@ -11,7 +11,7 @@
 #include <linux/sched.h>
 #include <linux/cpu.h>
 
-#include <linux/compress-interface.h>
+struct crypto_comp *ci_tfm;
 
 /*
  * allocate new ci_strm structure with ->tfm initialized by
@@ -57,9 +57,15 @@ int ci_compress(char *src, unsigned int src_len, char *dst,
 		printk("dst_len is null");
 	}
 
+
 	if (!ci_tfm) {
-		printk("unable to allocate tfm ");
+		
 		ci_tfm = ci_alloc();
+		
+	}
+
+	if(!ci_tfm){
+		printk("not allocated\n");
 	}
 	int result = crypto_comp_compress(ci_tfm, src, src_len, dst, dst_len);
 

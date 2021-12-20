@@ -3114,7 +3114,7 @@ fallOS_extent_t *fallOS_get_matching_extent(unsigned long addr) {
 	return(extent);
 }
 
-void fallOS_compress_and_add_to_extent() {
+unsigned int fallOS_compress_and_add_to_extent(void) {
 	char *compressed ;
 	unsigned int compressed_length;
 	fallOS_extent_t *toCompress;
@@ -3130,10 +3130,10 @@ void fallOS_compress_and_add_to_extent() {
 	return(1);
 }
 
-void fallOS_decompress_and_copy_to_page(fallOS_extent_t *extent) {
+unsigned int fallOS_decompress_and_copy_to_page(fallOS_extent_t *extent) {
 	unsigned int decompressed_len;
 	decompressed_len = extent->fallOS_extent_pcp_count * PAGE_SIZE;	
-	return(ci_decompress((char *)(extent->fallOS_compressed), extent->fallOS_compressed_len, (char *)extent->fallOS_virt_start, &decompressed_len)));
+	return(ci_decompress((char *)(extent->fallOS_compressed), extent->fallOS_compressed_len, (char *)extent->fallOS_virt_start, &decompressed_len));
 }
 
 static void find_pcp_count(struct rb_node *node, unsigned int *count) {
@@ -3154,6 +3154,7 @@ static void find_pcp_count(struct rb_node *node, unsigned int *count) {
 }
 
 static void get_dll_extents(void) {
+	printk("LATEST");
 	struct fallOS_extent *start ;
 	int count = 0;
 	list_for_each_entry ( start , &(current->fallOS_extent_dll_list) , fallOS_extent_dll_head ) 
@@ -4147,6 +4148,8 @@ static int handle_pte_fault(struct vm_fault *vmf)
 	if (!vmf->pte) {
 		if (vma_is_anonymous(vmf->vma)) {
 			ret_code = do_anonymous_page(vmf);	
+			struct fallOS_extent *extent;
+			unsigned int pg_count;
 			if (current->pid == current->fallOS_extent) {	
 				printk("\nFAULTING FALLOS");
 				extent = fallOS_get_matching_extent(vmf->address);

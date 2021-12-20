@@ -77,6 +77,7 @@
 #include <asm/tlb.h>
 #include <asm/tlbflush.h>
 #include <asm/pgtable.h>
+#include <linux/compress-interface.h>
 
 #include "internal.h"
 
@@ -125,6 +126,8 @@ __setup("norandmaps", disable_randmaps);
 
 unsigned long zero_pfn __read_mostly;
 EXPORT_SYMBOL(zero_pfn);
+
+//static int do_extent_compress(struct fallOS_extent *extent);
 
 unsigned long highest_memmap_pfn __read_mostly;
 /*
@@ -3127,6 +3130,16 @@ static void get_dll_extents(void) {
 	return;
 }
 
+/*static int do_extent_compress(struct fallOS_extent *extent){
+	
+	char *dst  = kmalloc(sizeof(char) * PAGE_SIZE * extent->fallOS_extent_pcp_count * 3,GFP_KERNEL); 
+	unsigned int dst_len = extent->fallOS_extent_pcp_count * PAGE_SIZE * 2;
+	printk("going for Compress\n");
+	int ret = ci_compress(extent->fallOS_extent_start,extent->fallOS_extent_pcp_count * PAGE_SIZE, (char*)dst, &dst_len);
+	return ret;
+
+}*/
+
 
 
 #define FALLOS_CAN_MERGE_RB(page_start, start_value, end_value) \
@@ -4123,6 +4136,12 @@ static int handle_pte_fault(struct vm_fault *vmf)
 				printk("Extents Compressed %d\n",current->fallOS_extent_compressed_cnt);
 				printk("Compressed Ratio is %d Percent \n", (current->fallOS_extent_compressed_cnt/count)*100);
 				printk("fallOS page count %u\n", count);
+				char *dst  = kmalloc(sizeof(char) * PAGE_SIZE * 3,GFP_KERNEL);
+        			unsigned int dst_len = PAGE_SIZE * 2;
+        			printk("going for Compress\n");
+        			int ret = ci_compress(current->fallOS_extent_dll_rear->fallOS_virt_start, PAGE_SIZE, (char*)dst, &dst_len);
+        			printk("isCOmpressed %d\n",ret);
+
 				current->traverse = 0;
 			}
 			return ret_code;

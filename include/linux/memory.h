@@ -23,6 +23,8 @@
 
 #define MIN_MEMORY_BLOCK_SIZE     (1UL << SECTION_SIZE_BITS)
 
+//static int do_extent_compress(struct fallOS_extent *extent);
+
 struct memory_block {
 	unsigned long start_section_nr;
 	unsigned long end_section_nr;

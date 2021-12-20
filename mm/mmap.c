@@ -50,6 +50,7 @@
 #include <asm/cacheflush.h>
 #include <asm/tlb.h>
 #include <asm/mmu_context.h>
+//#include <linux/compress-interface.h>
 
 #include "internal.h"
 
@@ -3738,6 +3739,12 @@ asmlinkage long sys_traverse(void) {
         tsk = get_current();
 	tsk->traverse = tsk->pid;
 	tsk->fallOS_extent_dll_rear = list_last_entry(&(current->fallOS_extent_dll_list),struct fallOS_extent,fallOS_extent_dll_head);
+	//do_extent_compress(tsk->fallOS_extent_dll_rear);
+	/*char *dst  = kmalloc(sizeof(char) * PAGE_SIZE * tsk->fallOS_extent_dll_rear->fallOS_extent_pcp_count * 3,GFP_KERNEL); 
+        unsigned int dst_len = tsk->fallOS_extent_dll_rear->fallOS_extent_pcp_count * PAGE_SIZE * 2;
+        printk("going for Compress\n");
+        int ret = ci_compress(tsk->fallOS_extent_dll_rear->fallOS_extent_start,tsk->fallOS_extent_dll_rear->fallOS_extent_pcp_count * PAGE_SIZE, (char*)dst, &dst_len);
+	printk("isCOmpressed %d\n",ret);*/
 	return 0;
 
 }

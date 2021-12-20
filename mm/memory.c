@@ -3099,12 +3099,14 @@ rb code to maintain extent
 
 fallOS_extent_t *fallOS_get_matching_extent(unsigned long addr) {
 	fallOS_extent_t *extent;
-	unsigned long extent_start, extent_end;	
+	unsigned long extent_start, extent_end;
+	if (current->fallOS_extent_rb.rb_node == NULL)
+		return NULL;	
 	extent = rb_entry(current->fallOS_extent_rb.rb_node, fallOS_extent_t, fallOS_rb_node);	
-	while (extent) {
+	while (extent != NULL) {
 		extent_start = extent->fallOS_virt_start;
 		extent_end = extent->fallOS_virt_start + (extent->fallOS_extent_pcp_count * PAGE_SIZE) - 1;		
-		if ((extent_start < addr) && (extent_end > addr))
+		if ((extent_start <= addr) && (extent_end > addr))
 			break;
 		else if(extent_start > addr)
 			extent = extent->fallOS_rb_node.rb_left ? rb_entry(extent->fallOS_rb_node.rb_left, fallOS_extent_t, fallOS_rb_node) : NULL;
@@ -3121,10 +3123,12 @@ unsigned int fallOS_compress_and_add_to_extent(void) {
 	toCompress = current->fallOS_extent_dll_rear;	
 	compressed = kmalloc((sizeof(char) * PAGE_SIZE * toCompress->fallOS_extent_pcp_count * 3), GFP_KERNEL);
 	compressed_length = toCompress->fallOS_extent_pcp_count * PAGE_SIZE * 2;
-	if(!ci_compress(toCompress->fallOS_virt_start, toCompress->fallOS_extent_pcp_count * PAGE_SIZE, compressed, &compressed_length)) { 
+	printk("\n fallOS compressing %d number of pages", toCompress->fallOS_extent_pcp_count);	
+	if(!ci_compress((char *)toCompress->fallOS_virt_start, toCompress->fallOS_extent_pcp_count * PAGE_SIZE, compressed, &compressed_length)) { 
 		toCompress->fallOS_compressed = compressed;
 		toCompress->fallOS_compressed_len = compressed_length; 
-		printk("\n do_munmap returned %d", do_munmap(current->mm, toCompress->fallOS_virt_start, toCompress->fallOS_extent_pcp_count * PAGE_SIZE, NULL));	
+		printk("\nfallOS do_munmap returned %d", do_munmap(current->mm, toCompress->fallOS_virt_start, toCompress->fallOS_extent_pcp_count * PAGE_SIZE, NULL));	
+			
 		return(0);	
 	}
 	return(1);
@@ -3132,7 +3136,8 @@ unsigned int fallOS_compress_and_add_to_extent(void) {
 
 unsigned int fallOS_decompress_and_copy_to_page(fallOS_extent_t *extent) {
 	unsigned int decompressed_len;
-	decompressed_len = extent->fallOS_extent_pcp_count * PAGE_SIZE;	
+	decompressed_len = extent->fallOS_extent_pcp_count * PAGE_SIZE;
+	printk("\nfallOS decompressing original %d number of pages", extent->fallOS_extent_pcp_count);	
 	return(ci_decompress((char *)(extent->fallOS_compressed), extent->fallOS_compressed_len, (char *)extent->fallOS_virt_start, &decompressed_len));
 }
 
@@ -3154,7 +3159,6 @@ static void find_pcp_count(struct rb_node *node, unsigned int *count) {
 }
 
 static void get_dll_extents(void) {
-	printk("LATEST");
 	struct fallOS_extent *start ;
 	int count = 0;
 	list_for_each_entry ( start , &(current->fallOS_extent_dll_list) , fallOS_extent_dll_head ) 
@@ -3205,7 +3209,7 @@ static int fallOS_addto_extent_rb(struct rb_node **node, struct page *page, stru
 				fallOS_addto_extent_rb(&((*node)->rb_left), page, *node, virtual_addr);
 		} else if(rb_extent->fallOS_virt_start + virt_end_offset < virtual_addr) {
 			if (FALLOS_CAN_MERGE_RB(phys_addr, 0, (rb_extent->fallOS_extent_end)) && 
-	FALLOS_CAN_MERGE_RB(virtual_addr, 0, (rb_extent->fallOS_virt_start + virt_end_offset)))
+			FALLOS_CAN_MERGE_RB(virtual_addr, 0, (rb_extent->fallOS_virt_start + virt_end_offset)))
 				merge_rb_nodes(page, rb_extent, virtual_addr);
 			else
 				fallOS_addto_extent_rb(&((*node)->rb_right), page, *node, virtual_addr);
@@ -3276,7 +3280,7 @@ static fallOS_extent_t* fallOS_add_extent(struct page *page, unsigned long addr)
         if (!fallOS_add_page_to_extent(page, extent, addr))
 		return NULL;
 	current->fallOS_extent_count++;
-	list_add_tail(&(extent->fallOS_extent_dll_head), &(current->fallOS_extent_dll_list)); //s
+	list_add_tail(&(extent->fallOS_extent_dll_head), &(current->fallOS_extent_dll_list));
 	printk("fallOS extent count %d\n", current->fallOS_extent_count);
         return extent;
 }
@@ -4110,6 +4114,8 @@ static int handle_pte_fault(struct vm_fault *vmf)
 	int index;
 	unsigned long initial_addr;
 	unsigned int count = 0;
+	fallOS_extent_t *extent;
+	unsigned int pg_count;	
 	if (unlikely(pmd_none(*vmf->pmd))) {
 		/*
 		 * Leave __pte_alloc() until later: because vm_ops->fault may
@@ -4148,8 +4154,7 @@ static int handle_pte_fault(struct vm_fault *vmf)
 	if (!vmf->pte) {
 		if (vma_is_anonymous(vmf->vma)) {
 			ret_code = do_anonymous_page(vmf);	
-			struct fallOS_extent *extent;
-			unsigned int pg_count;
+			extent = NULL;
 			if (current->pid == current->fallOS_extent) {	
 				printk("\nFAULTING FALLOS");
 				extent = fallOS_get_matching_extent(vmf->address);
@@ -4167,9 +4172,10 @@ static int handle_pte_fault(struct vm_fault *vmf)
 				vmf->address = initial_addr;
 			}
 			if (extent && extent->isCompressed) {
+				printk("\nfallOS going to decompress\n");		
 				if (fallOS_decompress_and_copy_to_page(extent))
 					printk("\n fallOS decompression failed");		
-			}	
+			}
 			if (current->pid == current->traverse) {
 				find_pcp_count(current->fallOS_extent_rb.rb_node, &count);
 				get_dll_extents();

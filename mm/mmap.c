@@ -69,11 +69,11 @@ int mmap_rnd_compat_bits __read_mostly = CONFIG_ARCH_MMAP_RND_COMPAT_BITS;
 #endif
 static bool ignore_rlimit_data;
 core_param(ignore_rlimit_data, ignore_rlimit_data, bool, 0644);
-
+//static int set_rocksdb;
 static void unmap_region(struct mm_struct *mm,
 		struct vm_area_struct *vma, struct vm_area_struct *prev,
 		unsigned long start, unsigned long end);
-
+void fallOS_get_extent_and_compress(void);
 /* description of effects of mapping type and prot in current implementation.
  * this is due to the limited x86 page protection hardware.  The expected
  * behavior is in parens:
@@ -3721,8 +3721,8 @@ static int __meminit init_reserve_notifier(void)
 
 	return 0;
 }
+
 asmlinkage long sys_fallos(void) {
-	printk("IN SYSFALLOS");
 	struct task_struct *tsk;
 	tsk = get_current();
 	tsk->fallOS_extent = tsk->pid;
@@ -3735,11 +3735,11 @@ asmlinkage long sys_fallos(void) {
 
 asmlinkage long sys_traverse(void) {
 	struct task_struct *tsk;
-        tsk = get_current();
+	tsk = get_current();
 	tsk->traverse = tsk->pid;
 	tsk->fallOS_extent_dll_rear = list_last_entry(&(current->fallOS_extent_dll_list),struct fallOS_extent,fallOS_extent_dll_head);
+	fallOS_get_extent_and_compress();	
 	return 0;
-
 }
 
 subsys_initcall(init_reserve_notifier);

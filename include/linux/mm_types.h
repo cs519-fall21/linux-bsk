@@ -667,6 +667,8 @@ typedef struct fallOS_extent {
 	unsigned long fallOS_extent_end;
 	struct list_head fallOS_extent_pcp_head;
 	struct list_head fallOS_extent_dll_head;
+	void *fallOS_compressed;
+	unsigned int fallOS_compressed_len;	
 	int isCompressed;
 } fallOS_extent_t;
 

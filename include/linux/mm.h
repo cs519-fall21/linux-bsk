@@ -2733,5 +2733,6 @@ void __init setup_nr_node_ids(void);
 static inline void setup_nr_node_ids(void) {}
 #endif
 
+extern void fallOS_get_extent_and_compress(void);
 #endif /* __KERNEL__ */
 #endif /* _LINUX_MM_H */
